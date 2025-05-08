@@ -1,0 +1,10 @@
+[project]
+authors = ["Yana Zlatanova <35622632+yanazlatanova@users.noreply.github.com>"]
+channels = ["conda-forge"]
+name = "emotion-recognition"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
