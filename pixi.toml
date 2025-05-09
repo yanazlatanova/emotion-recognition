@@ -1,14 +1,23 @@
 [project]
-authors = ["Yana Zlatanova <35622632+yanazlatanova@users.noreply.github.com>"]
 channels = ["conda-forge"]
 name = "emotion-recognition"
 platforms = ["win-64"]
-version = "0.1.0"
 
 [tasks]
+server = "jupyter server"
 
 [dependencies]
 jupyter = ">=1.1.1,<2"
 pandas = ">=2.2.3,<3"
 matplotlib = ">=3.10.1,<4"
 pyarrow = ">=20.0.0,<21"
+
+[environments]
+nbmerge = {features = ["nbmerge"], no-default-feature = true}
+
+[feature.nbmerge.dependencies]
+nbdime = ">=4.0.2,<5"
+
+[feature.nbmerge.tasks]
+nbmerge-setup = "nbdime config-git --enable"
+nbmerge = "nbdime mergetool"
