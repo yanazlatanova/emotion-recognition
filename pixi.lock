@@ -175,6 +175,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/pandas-2.2.3-py313hf91d08e_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.4-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pcre2-10.44-h99c9b8b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-pyhd8ed1ab_1004.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pillow-11.2.1-py313hda88b71_0.conda
@@ -213,6 +214,9 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/rfc3339-validator-0.1.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rfc3986-validator-0.1.1-pyh9f0ad1d_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/win-64/rpds-py-0.24.0-py313h54fc02f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/scipy-1.15.2-py313h2eca4b9_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-0.13.2-hd8ed1ab_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.13.2-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/send2trash-1.8.3-pyh5737063_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.1.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
@@ -220,6 +224,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/sniffio-1.3.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/soupsieve-2.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/stack_data-0.6.3-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/statsmodels-0.14.4-py313h8e081ca_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tbb-2021.13.0-h62715c5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/terminado-0.18.1-pyh5737063_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
@@ -365,8 +370,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 105909
@@ -379,8 +382,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 48782
@@ -392,8 +393,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 235196
@@ -409,8 +408,6 @@ packages:
   - vc14_runtime >=14.29.30139
   - ucrt >=10.0.20348.0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 22617
@@ -428,8 +425,6 @@ packages:
   - aws-checksums >=0.2.7,<0.2.8.0a0
   - aws-c-io >=0.19.0,<0.19.1.0a0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 55607
@@ -448,8 +443,6 @@ packages:
   - aws-c-cal >=0.9.0,<0.9.1.0a0
   - aws-c-common >=0.12.2,<0.12.3.0a0
   - aws-c-compression >=0.3.1,<0.3.2.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 202761
@@ -466,8 +459,6 @@ packages:
   - ucrt >=10.0.20348.0
   - aws-c-common >=0.12.2,<0.12.3.0a0
   - aws-c-cal >=0.9.0,<0.9.1.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 177549
@@ -485,8 +476,6 @@ packages:
   - aws-c-io >=0.19.0,<0.19.1.0a0
   - aws-c-http >=0.10.0,<0.10.1.0a0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 203417
@@ -507,8 +496,6 @@ packages:
   - aws-c-cal >=0.9.0,<0.9.1.0a0
   - aws-c-auth >=0.9.0,<0.9.1.0a0
   - aws-c-http >=0.10.0,<0.10.1.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 122364
@@ -524,8 +511,6 @@ packages:
   - vc14_runtime >=14.29.30139
   - ucrt >=10.0.20348.0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 55548
@@ -541,8 +526,6 @@ packages:
   - vc14_runtime >=14.29.30139
   - ucrt >=10.0.20348.0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 92638
@@ -566,8 +549,6 @@ packages:
   - aws-c-auth >=0.9.0,<0.9.1.0a0
   - aws-c-event-stream >=0.5.4,<0.5.5.0a0
   - aws-c-io >=0.19.0,<0.19.1.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 291499
@@ -586,8 +567,6 @@ packages:
   - aws-c-event-stream >=0.5.4,<0.5.5.0a0
   - libzlib >=1.3.1,<2.0a0
   - aws-c-common >=0.12.2,<0.12.3.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 3222624
@@ -694,8 +673,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: MIT
   license_family: MIT
   size: 194147
@@ -1543,8 +1520,6 @@ packages:
   constrains:
   - libabseil-static =20250127.1=cxx17*
   - abseil-cpp =20250127.1
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 1836732
@@ -1581,8 +1556,6 @@ packages:
   - parquet-cpp <0.0a0
   - arrow-cpp <0.0a0
   - apache-arrow-proc =*=cpu
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 5394310
@@ -1596,8 +1569,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.3,<15
   - vc14_runtime >=14.42.34438
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 461041
@@ -1613,8 +1584,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.3,<15
   - vc14_runtime >=14.42.34438
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 441574
@@ -1633,8 +1602,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.3,<15
   - vc14_runtime >=14.42.34438
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 366901
@@ -1722,8 +1689,6 @@ packages:
   depends:
   - vc >=14.1,<15.0a0
   - vs2015_runtime >=14.16.27012
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 25694
@@ -1738,8 +1703,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: curl
   license_family: MIT
   size: 357142
@@ -1763,8 +1726,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 410555
@@ -1871,8 +1832,6 @@ packages:
   - vc14_runtime >=14.29.30139
   constrains:
   - libgoogle-cloud 2.36.0 *_1
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 14643
@@ -1889,8 +1848,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 14544
@@ -1912,8 +1869,6 @@ packages:
   - vc14_runtime >=14.29.30139
   constrains:
   - grpc-cpp =1.71.0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 13999413
@@ -2010,8 +1965,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.3,<15
   - vc14_runtime >=14.42.34438
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 823589
@@ -2037,8 +1990,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 6898266
@@ -2054,8 +2005,6 @@ packages:
   - vc14_runtime >=14.29.30139
   constrains:
   - re2 2024.07.02.*
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 263495
@@ -2089,8 +2038,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 292785
@@ -2105,8 +2052,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 633857
@@ -2134,8 +2079,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: MIT
   license_family: MIT
   size: 85371
@@ -2223,8 +2166,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: BSD-2-Clause
   license_family: BSD
   size: 139891
@@ -2466,8 +2407,6 @@ packages:
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
   - zstd >=1.5.7,<1.6.0a0
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: Apache
   size: 1111604
@@ -2560,6 +2499,16 @@ packages:
   license_family: MIT
   size: 75295
   timestamp: 1733271352153
+- conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.1-pyhd8ed1ab_1.conda
+  sha256: ab52916f056b435757d46d4ce0a93fd73af47df9c11fd72b74cc4b7e1caca563
+  md5: ee23fabfd0a8c6b8d6f3729b47b2859d
+  depends:
+  - numpy >=1.4.0
+  - python >=3.9
+  license: BSD-2-Clause AND PSF-2.0
+  license_family: BSD
+  size: 186594
+  timestamp: 1733792482894
 - conda: https://conda.anaconda.org/conda-forge/win-64/pcre2-10.44-h99c9b8b_2.conda
   sha256: 15dffc9a2d6bb6b8ccaa7cbd26b229d24f1a0a1c4f5685b308a63929c56b381f
   md5: a912b2c4ff0f03101c751aa79a331831
@@ -2706,8 +2655,6 @@ packages:
   - pyarrow-core 20.0.0 *_0_*
   - python >=3.13,<3.14.0a0
   - python_abi 3.13.* *_cp313
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 26278
@@ -2726,8 +2673,6 @@ packages:
   constrains:
   - apache-arrow-proc * cpu
   - numpy >=1.21,<3
-  arch: x86_64
-  platform: win
   license: Apache-2.0
   license_family: APACHE
   size: 3461040
@@ -2967,8 +2912,6 @@ packages:
   md5: f94cfa965a6498540057555957903dba
   depends:
   - libre2-11 2024.07.02 hd248061_3
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 220297
@@ -3036,6 +2979,53 @@ packages:
   license_family: MIT
   size: 255547
   timestamp: 1743037492141
+- conda: https://conda.anaconda.org/conda-forge/win-64/scipy-1.15.2-py313h2eca4b9_0.conda
+  sha256: 64ab269e333ab957c61053745cb967bfbe216f191a594107adcb69aca16b6294
+  md5: 9ee392518b0a688b996dec39ced39e35
+  depends:
+  - libblas >=3.9.0,<4.0a0
+  - libcblas >=3.9.0,<4.0a0
+  - liblapack >=3.9.0,<4.0a0
+  - numpy <2.5
+  - numpy >=1.21,<3
+  - numpy >=1.23.5
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - ucrt >=10.0.20348.0
+  - vc >=14.2,<15
+  - vc14_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 15516458
+  timestamp: 1739793288161
+- conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-0.13.2-hd8ed1ab_3.conda
+  noarch: python
+  sha256: ea29a69b14dd6be5cdeeaa551bf50d78cafeaf0351e271e358f9b820fcab4cb0
+  md5: 62afb877ca2c2b4b6f9ecb37320085b6
+  depends:
+  - seaborn-base 0.13.2 pyhd8ed1ab_3
+  - statsmodels >=0.12
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 6876
+  timestamp: 1733730113224
+- conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.13.2-pyhd8ed1ab_3.conda
+  sha256: f209c9c18187570b85ec06283c72d64b8738f825b1b82178f194f4866877f8aa
+  md5: fd96da444e81f9e6fcaac38590f3dd42
+  depends:
+  - matplotlib-base >=3.4,!=3.6.1
+  - numpy >=1.20,!=1.24.0
+  - pandas >=1.2
+  - python >=3.9
+  - scipy >=1.7
+  constrains:
+  - seaborn =0.13.2=*_3
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 227843
+  timestamp: 1733730112409
 - conda: https://conda.anaconda.org/conda-forge/noarch/send2trash-1.8.3-pyh5737063_1.conda
   sha256: ba8b93df52e0d625177907852340d735026c81118ac197f61f1f5baea19071ad
   md5: e6a4e906051565caf5fdae5b0415b654
@@ -3072,8 +3062,6 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: BSD-3-Clause
   license_family: BSD
   size: 59757
@@ -3108,6 +3096,27 @@ packages:
   license_family: MIT
   size: 26988
   timestamp: 1733569565672
+- conda: https://conda.anaconda.org/conda-forge/win-64/statsmodels-0.14.4-py313h8e081ca_0.conda
+  sha256: 30c5731c81f8de663bf42e4ffc3b9508eabeceefaec17a997057e21c15327ec6
+  md5: 8ab38d75ca4ad6855d029da04bffd5cb
+  depends:
+  - numpy <3,>=1.22.3
+  - numpy >=1.21,<3
+  - packaging >=21.3
+  - pandas !=2.1.0,>=1.4
+  - patsy >=0.5.6
+  - python >=3.13.0rc2,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - scipy !=1.9.2,>=1.8
+  - ucrt >=10.0.20348.0
+  - vc >=14.2,<15
+  - vc14_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 11727420
+  timestamp: 1727987445149
 - conda: https://conda.anaconda.org/conda-forge/win-64/tbb-2021.13.0-h62715c5_1.conda
   sha256: 03cc5442046485b03dd1120d0f49d35a7e522930a2ab82f275e938e17b07b302
   md5: 9190dd0a23d925f7602f9628b3aed511
