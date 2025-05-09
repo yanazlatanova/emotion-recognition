@@ -11,6 +11,7 @@ jupyter = ">=1.1.1,<2"
 pandas = ">=2.2.3,<3"
 matplotlib = ">=3.10.1,<4"
 pyarrow = ">=20.0.0,<21"
+nltk = ">=3.9.1,<4"
 
 [environments]
 nbmerge = {features = ["nbmerge"], no-default-feature = true}
