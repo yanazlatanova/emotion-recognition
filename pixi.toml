@@ -9,12 +9,18 @@ server = "jupyter server"
 [dependencies]
 jupyter = ">=1.1.1,<2"
 pandas = ">=2.2.3,<3"
-matplotlib = ">=3.10.1,<4"
-pyarrow = ">=20.0.0,<21"
+matplotlib = ">=3.10.3,<4"
+pyarrow = ">=19.0.1,<20"
 seaborn = ">=0.13.2,<0.14"
 nltk = ">=3.9.1,<4"
 pyprojroot = ">=0.3.0,<0.4"
-pyjanitor = ">=0.31.0,<0.32"
+r-irkernel = ">=1.3.2,<2"
+r = ">=4.4,<4.5"
+r-tidyverse = ">=2.0.0,<3"
+r-here = ">=1.0.1,<2"
+r-arrow = ">=19.0.1,<20"
+r-conflicted = ">=1.2.0,<2"
+r-janitor = ">=2.2.1,<3"
 
 [environments]
 nbmerge = {features = ["nbmerge"], no-default-feature = true}
@@ -25,7 +31,3 @@ nbdime = ">=4.0.2,<5"
 [feature.nbmerge.tasks]
 nbmerge-setup = "nbdime config-git --enable"
 nbmerge = "nbdime mergetool"
-
-[pypi-dependencies]
-datar-pandas = ">=0.5.6, <0.6"
-datar = { version = ">=0.15.9, <0.16", extras = ["pandas"] }
