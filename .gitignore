@@ -1,5 +1,6 @@
 temp/
 temp.*
+cache/
 # pixi environments
 .pixi
 *.egg-info
