@@ -9,8 +9,22 @@ import torchmetrics
 from icecream import ic
 import torchmetrics.classification
 import torchmetrics.regression
+from sklearn.model_selection import train_test_split
+import numpy as np
+from lightning.pytorch.callbacks import Callback
 
-DEVICE = "cpu" # fuck the gpu for now
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+class MetricsCallback(Callback):
+  def __init__(self):
+    self.val_losses = []
+    self.epochs = []
+    
+  def on_validation_epoch_end(self, trainer, pl_module):
+    self.val_losses.append(trainer.callback_metrics["val_loss"].item())
+    self.epochs.append(trainer.current_epoch)
+
 
 class GoEmotionsDataset(torch.utils.data.Dataset):
   def __init__(self, dataframe):
