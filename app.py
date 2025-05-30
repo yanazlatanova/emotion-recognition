@@ -1,7 +1,7 @@
 import streamlit as st
 import torch
 torch.classes.__path__ = []
-from models.model_definition import DistilBertFinetune  # your class import
+from models.model_definitions import DistilBertFinetune  # your class import
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 
 from pyprojroot import here
