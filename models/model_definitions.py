@@ -105,8 +105,8 @@ class DistilBertFinetune(L.LightningModule):
     self.f1_interest = torchmetrics.classification.MultilabelF1Score(num_labels=n_emotions, average="macro") # macro is average of f1s, micro is global f1
     self.rmse = torchmetrics.regression.MeanSquaredError(squared=False)
     self.nDGC = NDCG(k=None, dist_sync_on_step=False)
-    self.approx_nDGC = ApproxNDCGLoss(tau=1)
-    # changed: removed self.expected_nDGC
+    self.expected_nDGC = SoftRankExpectedNDCG(sigma=0.05)
+
 
   def training_step(self, batch):
     x, target = batch
@@ -153,7 +153,7 @@ class DistilBertFinetune(L.LightningModule):
       "val_cross_entropy": cross_entropy, 
       "val_rmse": self.rmse(y, target),
       "val_nDGC": self.nDGC(preds=y, target=target),
-      "val_approxNDCG": self.approx_nDGC(logits.logits, target),
+      "val_expectedNDCG": self.expected_nDGC(preds=y, target=target),
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
     return cross_entropy
   
@@ -179,7 +179,7 @@ class DistilBertFinetune(L.LightningModule):
     y = self.sigmoid(logits.logits)
     rmse = self.rmse(y, target)
     ndcg = self.nDGC(preds=y, target=target)
-    approx_ndcg = self.approx_nDGC(logits.logits, target)
+    expected_ndcg = self.expected_nDGC(preds=y, target=target)
     y = (y > 0.5).int()
     target_stand = (target > 0.01).int()
     target_interest = (target > 0.8).int()
@@ -197,7 +197,7 @@ class DistilBertFinetune(L.LightningModule):
       "test_f1_interest": f1_interest,
       "test_rmse": rmse,
       "test_nDGC": ndcg,
-      "test_approxNDCG": approx_ndcg
+      "test_expectedNDCG": expected_ndcg
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
     return cross_entropy
   
@@ -260,7 +260,7 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
     self.sigmoid = torch.nn.Sigmoid()
     self.sig_loss = torch.nn.BCEWithLogitsLoss()
     self.nDGC = NDCG(k=None, dist_sync_on_step=False)
-    self.approx_nDGC = ApproxNDCGLoss(tau=1)
+    self.expected_nDGC = SoftRankNDCGLoss(sigma=0.05)
     # F1 standard will be a postivie emotion if theres at least one rater who rated it as positive
     # F1 interesting will be a positive emotion for every emotion > 0.8, but if there isn't at least one, the highest emotion will be considered positive
     self.f1_stand = torchmetrics.classification.MultilabelF1Score(num_labels=n_emotions, average="macro") # macro is average of f1s, micro is global f1
@@ -283,7 +283,10 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
       attention_mask=tokens["attention_mask"]
     )
     y = self.sigmoid(logits.logits)
-    loss = self.approx_nDGC(logits.logits, target)
+    loss = self.expected_nDGC(
+      preds=y,
+      target=target
+    )
     return loss
 
   def validation_step(self, batch):
@@ -302,14 +305,17 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
       attention_mask=tokens["attention_mask"]
     )
     y = self.sigmoid(logits.logits)
-    approx_nDGC = self.approx_nDGC(logits.logits, target)
+    loss = self.expected_nDGC(
+      preds=y,
+      target=target
+    )
     self.log_dict({
-      "val_approxNDCG": 1-approx_nDGC, 
+      "val_expectedNDCG": loss, 
       "val_cross_entropy": self.sig_loss(logits.logits, target),
       "val_nDGC": self.nDGC(preds=y, target=target),
       "val_rmse": self.rmse(y, target),
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-    return approx_nDGC
+    return loss
   
   def test_step(self, batch):
     x, target = batch
@@ -334,7 +340,7 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
     y = self.sigmoid(logits.logits)
     rmse = self.rmse(y, target)
     ndcg = self.nDGC(preds=y, target=target)
-    approx_ndcg = loss = self.approx_nDGC(logits.logits, target)
+    expected_ndcg = loss =  self.expected_nDGC(preds=y, target=target)
     y_bin = (y > 0.5).int()
     target_stand = (target > 0.01).int()
     target_interest = (target > 0.8).int()
@@ -351,7 +357,7 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
       "test_f1_interest": f1_interest,
       "test_rmse": rmse,
       "test_nDGC": ndcg,
-      "test_approxNDCG": 1-approx_ndcg
+      "test_expectedNDCG": expected_ndcg
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
     return loss
   
@@ -488,6 +494,70 @@ class SoftRankNDCGLoss(nn.Module):
     return loss
 
 
+class SoftRankExpectedNDCG(torchmetrics.Metric):
+    def __init__(self, sigma=1.0, k=None, dist_sync_on_step=False):
+        super().__init__(dist_sync_on_step=dist_sync_on_step)
+        self.sigma = sigma  # noise std dev
+        self.k = k  # cutoff for NDCG (optional)
+
+        self.add_state("sum_ndcg", default=torch.tensor(0.0), dist_reduce_fx="sum")
+        self.add_state("total", default=torch.tensor(0), dist_reduce_fx="sum")
+
+    def _expected_rank(self, scores):
+        # scores shape: [batch_size, list_size]
+        batch_size, list_size = scores.shape
+
+        # Expand for pairwise difference: [batch_size, list_size, list_size]
+        diff = scores.unsqueeze(2) - scores.unsqueeze(1)  # s_i - s_j
+
+        # Pairwise probability P(s_j > s_i) = CDF((s_j - s_i) / sqrt(2)*sigma)
+        normal = torch.distributions.normal.Normal(0, self.sigma * (2 ** 0.5))
+        p = normal.cdf(diff)  # shape: [batch_size, list_size, list_size]
+
+        # Expected rank: 1 + sum_{j != i} P(s_j > s_i)
+        # Exclude diagonal (j == i)
+        diag_mask = torch.eye(list_size, device=scores.device).bool()
+        p = p.masked_fill(diag_mask.unsqueeze(0), 0)
+
+        expected_ranks = 1 + p.sum(dim=2)  # sum over j dimension
+        return expected_ranks
+
+    def _dcg(self, rel, ranks):
+        # Compute discounted cumulative gain with expected ranks
+        # rel, ranks shape: [batch_size, list_size]
+        if self.k is not None:
+            rel = rel[:, :self.k]
+            ranks = ranks[:, :self.k]
+
+        gains = 2 ** rel - 1
+        discounts = torch.log2(ranks + 1)
+        return (gains / discounts).sum(dim=1)  # sum over list_size
+
+    def _idcg(self, rel):
+        # Ideal DCG: sort relevance descending
+        sorted_rel, _ = torch.sort(rel, descending=True, dim=1)
+        if self.k is not None:
+            sorted_rel = sorted_rel[:, :self.k]
+
+        gains = 2 ** sorted_rel - 1
+        discounts = torch.log2(torch.arange(1, sorted_rel.size(1) + 1, device=rel.device).float() + 1)
+        idcg = (gains / discounts).sum(dim=1)
+        return idcg
+
+    def update(self, preds: torch.Tensor, target: torch.Tensor):
+        expected_ranks = self._expected_rank(preds)
+        dcg = self._dcg(target, expected_ranks)
+        idcg = self._idcg(target)
+
+        # Avoid division by zero
+        ndcg = torch.where(idcg > 0, dcg / idcg, torch.zeros_like(dcg))
+
+        self.sum_ndcg += ndcg.sum()
+        self.total += ndcg.size(0)
+
+    def compute(self):
+        return self.sum_ndcg / self.total
+
 class ApproxNDCGLoss(nn.Module):
     def __init__(self, tau=1.0):
         """
@@ -528,3 +598,56 @@ class ApproxNDCGLoss(nn.Module):
         loss = 1.0 - approx_ndcg
 
         return loss.mean()
+      
+class SoftRankNDCGLoss(nn.Module):
+  def __init__(self, sigma=1.0, k=None):
+    super().__init__()
+    self.sigma = sigma
+    self.k = k
+
+  def forward(self, preds: torch.Tensor, target: torch.Tensor):
+    """
+    Args:
+        preds: Predicted scores, shape [batch_size, list_size]
+        target: Ground truth relevance labels, shape [batch_size, list_size]
+    Returns:
+        A scalar loss: negative Expected NDCG
+    """
+    batch_size, list_size = preds.shape
+
+    # Step 1: Compute pairwise probabilities
+    diff = preds.unsqueeze(2) - preds.unsqueeze(1)  # [B, L, L]
+    normal = torch.distributions.normal.Normal(0, self.sigma * (2 ** 0.5))
+    p = normal.cdf(diff)  # [B, L, L]
+    diag_mask = torch.eye(list_size, device=preds.device).bool()
+    p = p.masked_fill(diag_mask.unsqueeze(0), 0)
+
+    # Step 2: Compute expected ranks
+    expected_ranks = 1 + p.sum(dim=2)  # [B, L]
+
+    # Step 3: Truncate to top-k if needed
+    if self.k is not None:
+        topk_idx = torch.topk(target, self.k, dim=1).indices
+        target = torch.gather(target, dim=1, index=topk_idx)
+        expected_ranks = torch.gather(expected_ranks, dim=1, index=topk_idx)
+
+    # Step 4: Compute DCG and IDCG
+    gains = 2 ** target - 1
+    discounts = torch.log2(expected_ranks + 1)
+    dcg = (gains / discounts).sum(dim=1)  # [B]
+
+    ideal_target, _ = torch.sort(target, descending=True, dim=1)
+    if self.k is not None:
+        ideal_target = ideal_target[:, :self.k]
+    ideal_gains = 2 ** ideal_target - 1
+    ideal_discounts = torch.log2(
+        torch.arange(1, ideal_target.size(1) + 1, device=preds.device).float() + 1
+    )
+    idcg = (ideal_gains / ideal_discounts).sum(dim=1)  # [B]
+
+    # Step 5: Compute NDCG and loss
+    ndcg = dcg / (idcg + 1e-10)
+    loss = ndcg.mean()
+
+    return 1 - loss 
+
