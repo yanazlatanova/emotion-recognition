@@ -232,6 +232,16 @@ class ExponentialWeightedMSELoss(nn.Module):
   def forward(self, y_pred, y_true):
     y_pred = y_pred.float()
     y_true = y_true.float()
+    """
+    y	   exp(y)  2^y
+    0.0	 1.00	   1.00
+    0.2	 1.22	   1.15
+    0.4	 1.49	   1.32
+    0.6	 1.82	   1.52
+    0.8	 2.22	   1.78
+    1.0	 2.72	   2.00
+    """
+    
     weights = torch.exp(self.alpha * y_true)
     loss = weights * (y_true - y_pred) ** 2
     return loss.mean()
@@ -280,16 +290,16 @@ class BaseDistilBertModule(L.LightningModule):
 
   def _init_metrics(self):
     """Initialize common metrics"""
-    self.f1_stand = torchmetrics.classification.MultilabelF1Score(
+    self.f1_standard = torchmetrics.classification.MultilabelF1Score(
       num_labels=self.n_emotions, average="macro"
     )
-    self.f1_interest = torchmetrics.classification.MultilabelF1Score(
+    self.f1_interesting = torchmetrics.classification.MultilabelF1Score(
       num_labels=self.n_emotions, average="macro"
     )
     self.rmse = torchmetrics.regression.MeanSquaredError(squared=False)
-    self.nDGC = NDCG(k=None, dist_sync_on_step=False)
-    self.expected_nDGC = SoftRankExpectedNDCG(sigma=0.05)
-
+    self.ndcg = NDCG(k=None, dist_sync_on_step=False)
+    self.expected_ndcg = SoftRankExpectedNDCG(sigma=0.05)
+    self.weighted_mse = ExponentialWeightedMSELoss(alpha=1.0)
   def _tokenize_batch(self, texts):
     """Common tokenization logic"""
     tokens = self.tokenizer(
@@ -297,29 +307,35 @@ class BaseDistilBertModule(L.LightningModule):
     )
     return {k: v.to(DEVICE) for k, v in tokens.items()}
 
-  def _get_model_output(self, tokens):
+  def _get_model_output(self, tokens, get_predictions=True) -> tuple[torch.Tensor, torch.Tensor | None]:
     """Get model logits and sigmoid predictions"""
     logits = self.model(
       input_ids=tokens["input_ids"], attention_mask=tokens["attention_mask"]
     )
-    predictions = self.sigmoid(logits.logits)
-    return logits.logits, predictions
+    if get_predictions:
+      predictions = self.sigmoid(logits.logits)
+    return logits.logits, predictions if get_predictions else None
 
   def _compute_f1_metrics(self, predictions, targets):
-    """Compute F1 metrics with standard and interesting target processing"""
+    """
+      Compute F1 metrics with standard and interesting target processing
+      
+      F1 standard will be a postivie emotion if theres at least one rater who rated it as positive
+      F1 interesting will be a positive emotion for every emotion > 0.8, but if there isn't at least one, the highest emotion will be considered positive
+    """
     y_bin = (predictions > 0.5).int()
-    target_stand = (targets > 0.01).int()
-    target_interest = (targets > 0.8).int()
+    target_standard = (targets > 0.01).int()
+    target_interesting = (targets > 0.8).int()
 
     # If no emotion is above 0.8, take the highest emotion
-    if target_interest.sum() == 0:
+    if target_interesting.sum() == 0:
       max_emotion = targets.argmax(dim=1, keepdim=True)
-      target_interest = torch.zeros_like(targets, dtype=torch.int)
-      target_interest.scatter_(1, max_emotion, 1)
+      target_interesting = torch.zeros_like(targets, dtype=torch.int)
+      target_interesting.scatter_(1, max_emotion, 1)
 
-    f1_stand = self.f1_stand(y_bin, target_stand)
-    f1_interest = self.f1_interest(y_bin, target_interest)
-    return f1_stand, f1_interest
+    f1_standard = self.f1_standard(y_bin, target_standard)
+    f1_interesting = self.f1_interesting(y_bin, target_interesting)
+    return f1_standard, f1_interesting
 
   def configure_optimizers(self):
     return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -343,7 +359,7 @@ class DistilBertFinetune(BaseDistilBertModule):
     texts, targets = batch
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
-    logits, _ = self._get_model_output(tokens)
+    logits, _ = self._get_model_output(tokens, get_predictions=False)
     loss = self.sig_loss(logits, targets)
     return loss
 
@@ -352,15 +368,22 @@ class DistilBertFinetune(BaseDistilBertModule):
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
     logits, predictions = self._get_model_output(tokens)
-
     cross_entropy = self.sig_loss(logits, targets)
+    rmse = self.rmse(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    expected_ndcg = self.expected_ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+    weighted_mse = self.weighted_mse(predictions, targets)
 
     self.log_dict(
       {
         "val_cross_entropy": cross_entropy,
-        "val_rmse": self.rmse(predictions, targets),
-        "val_nDGC": self.nDGC(preds=predictions, target=targets),
-        "val_expectedNDCG": self.expected_nDGC(preds=predictions, target=targets),
+        "val_rmse": rmse,
+        "val_ndcg": ndcg,
+        "val_expected_ndcg": expected_ndcg,
+        "val_f1_standard": f1_standard,
+        "val_f1_interesting": f1_interesting,
+        "val_weighted_mse": weighted_mse,
       },
       on_step=False,
       on_epoch=True,
@@ -375,21 +398,22 @@ class DistilBertFinetune(BaseDistilBertModule):
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
     logits, predictions = self._get_model_output(tokens)
-
     cross_entropy = self.sig_loss(logits, targets)
     rmse = self.rmse(predictions, targets)
-    ndcg = self.nDGC(preds=predictions, target=targets)
-    expected_ndcg = self.expected_nDGC(preds=predictions, target=targets)
-    f1_stand, f1_interest = self._compute_f1_metrics(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    expected_ndcg = self.expected_ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+    weighted_mse = self.weighted_mse(predictions, targets)
 
     self.log_dict(
       {
         "test_cross_entropy": cross_entropy,
-        "test_f1_stand": f1_stand,
-        "test_f1_interest": f1_interest,
         "test_rmse": rmse,
-        "test_nDGC": ndcg,
-        "test_expectedNDCG": expected_ndcg,
+        "test_ndcg": ndcg,
+        "test_expected_ndcg": expected_ndcg,
+        "test_f1_standard": f1_standard,
+        "test_f1_interesting": f1_interesting,
+        "test_weighted_mse": weighted_mse,
       },
       on_step=False,
       on_epoch=True,
@@ -408,7 +432,7 @@ class DistilBertFinetuneOnDCG(BaseDistilBertModule):
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
     _, predictions = self._get_model_output(tokens)
-    loss = self.expected_nDGC(preds=predictions, target=targets)
+    loss = self.expected_ndcg(preds=predictions, target=targets)
     return loss
 
   def validation_step(self, batch):
@@ -416,15 +440,22 @@ class DistilBertFinetuneOnDCG(BaseDistilBertModule):
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
     logits, predictions = self._get_model_output(tokens)
-
-    loss = self.expected_nDGC(preds=predictions, target=targets)
+    loss = self.expected_ndcg(preds=predictions, target=targets)
+    cross_entropy = self.sig_loss(logits, targets)
+    rmse = self.rmse(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+    weighted_mse = self.weighted_mse(predictions, targets)
 
     self.log_dict(
       {
-        "val_expectedNDCG": loss,
-        "val_cross_entropy": self.sig_loss(logits, targets),
-        "val_nDGC": self.nDGC(preds=predictions, target=targets),
-        "val_rmse": self.rmse(predictions, targets),
+        "val_expected_ndcg": loss,
+        "val_cross_entropy": cross_entropy,
+        "val_ndcg": ndcg,
+        "val_rmse": rmse,
+        "val_f1_standard": f1_standard,
+        "val_f1_interesting": f1_interesting,
+        "val_weighted_mse": weighted_mse,
       },
       on_step=False,
       on_epoch=True,
@@ -439,21 +470,22 @@ class DistilBertFinetuneOnDCG(BaseDistilBertModule):
     tokens = self._tokenize_batch(texts)
     targets = targets.to(DEVICE)
     logits, predictions = self._get_model_output(tokens)
-
     cross_entropy = self.sig_loss(logits, targets)
     rmse = self.rmse(predictions, targets)
-    ndcg = self.nDGC(preds=predictions, target=targets)
-    expected_ndcg = self.expected_nDGC(preds=predictions, target=targets)
-    f1_stand, f1_interest = self._compute_f1_metrics(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    expected_ndcg = self.expected_ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+    weighted_mse = self.weighted_mse(predictions, targets)
 
     self.log_dict(
       {
         "test_cross_entropy": cross_entropy,
-        "test_f1_stand": f1_stand,
-        "test_f1_interest": f1_interest,
         "test_rmse": rmse,
-        "test_nDGC": ndcg,
-        "test_expectedNDCG": expected_ndcg,
+        "test_ndcg": ndcg,
+        "test_expected_ndcg": expected_ndcg,
+        "test_f1_standard": f1_standard,
+        "test_f1_interesting": f1_interesting,
+        "test_weighted_mse": weighted_mse,
       },
       on_step=False,
       on_epoch=True,
@@ -462,6 +494,78 @@ class DistilBertFinetuneOnDCG(BaseDistilBertModule):
     )
 
     return expected_ndcg
+
+
+class DistilBertFinetuneOnWeightedMSE(BaseDistilBertModule):
+  """DistilBERT fine-tuned with Weighted MSE loss"""
+
+  def training_step(self, batch):
+    texts, targets = batch
+    tokens = self._tokenize_batch(texts)
+    targets = targets.to(DEVICE)
+    _, predictions = self._get_model_output(tokens)
+    loss = self.weighted_mse(predictions, targets)
+    return loss
+
+  def validation_step(self, batch):
+    texts, targets = batch
+    tokens = self._tokenize_batch(texts)
+    targets = targets.to(DEVICE)
+    logits, predictions = self._get_model_output(tokens)
+    loss = self.weighted_mse(predictions, targets)
+    cross_entropy = self.sig_loss(logits, targets)
+    rmse = self.rmse(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    expected_ndcg = self.expected_ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+
+    self.log_dict(
+      {
+        "val_weighted_mse": loss,
+        "val_cross_entropy": cross_entropy,
+        "val_rmse": rmse,
+        "val_ndcg": ndcg,
+        "val_expected_ndcg": expected_ndcg,
+        "val_f1_standard": f1_standard,
+        "val_f1_interesting": f1_interesting,
+      },
+      on_step=False,
+      on_epoch=True,
+      prog_bar=True,
+      logger=True,
+    )
+
+    return loss
+
+  def test_step(self, batch):
+    texts, targets = batch
+    tokens = self._tokenize_batch(texts)
+    targets = targets.to(DEVICE)
+    logits, predictions = self._get_model_output(tokens)
+    cross_entropy = self.sig_loss(logits, targets)
+    rmse = self.rmse(predictions, targets)
+    ndcg = self.ndcg(preds=predictions, target=targets)
+    expected_ndcg = self.expected_ndcg(preds=predictions, target=targets)
+    f1_standard, f1_interesting = self._compute_f1_metrics(predictions, targets)
+    weighted_mse = self.weighted_mse(predictions, targets)
+
+    self.log_dict(
+      {
+        "test_cross_entropy": cross_entropy,
+        "test_rmse": rmse,
+        "test_ndcg": ndcg,
+        "test_expected_ndcg": expected_ndcg,
+        "test_f1_standard": f1_standard,
+        "test_f1_interesting": f1_interesting,
+        "test_weighted_mse": weighted_mse,
+      },
+      on_step=False,
+      on_epoch=True,
+      prog_bar=True,
+      logger=True,
+    )
+
+    return weighted_mse
 
 
 # ================== LEGACY MODELS ==================
