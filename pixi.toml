@@ -33,6 +33,7 @@ scikit-learn = ">=1.6.1,<2"
 [environments]
 nbmerge = {features = ["nbmerge"], no-default-feature = true}
 gpu = {features = ["gpu"]}
+format = {features = ["format"], no-default-feature = true}
 
 [feature.nbmerge.dependencies]
 nbdime = ">=4.0.2,<5"
@@ -50,5 +51,12 @@ pytorch-gpu = ">=2.6.0,<3"
 [feature.gpu.tasks]
 server_gpu = "jupyter server"
 
+[feature.format.dependencies]
+ruff = "*"
+
+[feature.format.tasks]
+format = "ruff format --config ruff.toml"
+
 [pypi-dependencies]
 hf-xet = ">=1.1.2, <2"
+
