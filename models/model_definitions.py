@@ -104,6 +104,8 @@ class DistilBertFinetune(L.LightningModule):
     self.f1_stand = torchmetrics.classification.MultilabelF1Score(num_labels=n_emotions, average="macro") # macro is average of f1s, micro is global f1
     self.f1_interest = torchmetrics.classification.MultilabelF1Score(num_labels=n_emotions, average="macro") # macro is average of f1s, micro is global f1
     self.rmse = torchmetrics.regression.MeanSquaredError(squared=False)
+    self.nDGC = NDCG(k=None, dist_sync_on_step=False)
+    self.expected_nDGC = SoftRankExpectedNDCG(sigma=0.05)
   
   def training_step(self, batch):
     x, target = batch
@@ -141,16 +143,18 @@ class DistilBertFinetune(L.LightningModule):
       input_ids=tokens["input_ids"],
       attention_mask=tokens["attention_mask"]
     )
-    loss = self.sig_loss(
+    cross_entropy = self.sig_loss(
       logits.logits,
       target
     )
     y = self.sigmoid(logits.logits)
     self.log_dict({
-      "val_loss": loss, 
+      "val_cross_entropy": cross_entropy, 
       "val_rmse": self.rmse(y, target),
+      "val_nDGC": self.nDGC(preds=y, target=target),
+      "val_expectedNDCG": self.expected_nDGC(preds=y, target=target),
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-    return loss
+    return cross_entropy
   
   def test_step(self, batch):
     x, target = batch
@@ -167,13 +171,15 @@ class DistilBertFinetune(L.LightningModule):
       input_ids=tokens["input_ids"],
       attention_mask=tokens["attention_mask"]
     )
-    loss = self.sig_loss(
+    cross_entropy = self.sig_loss(
       logits.logits,
       target
     )
     # note: some of therse can be moved to the setup fucntion to increase speed but it's fast enough to be here
     y = self.sigmoid(logits.logits)
     rmse = self.rmse(y, target)
+    ndcg = self.nDGC(preds=y, target=target)
+    expected_ndcg = self.expected_nDGC(preds=y, target=target)
     y = (y > 0.5).int()
     target_stand = (target > 0.01).int()
     target_interest = (target > 0.8).int()
@@ -186,12 +192,14 @@ class DistilBertFinetune(L.LightningModule):
     f1_interest = self.f1_interest(y, target_interest)
     
     self.log_dict({
-      "test_loss": loss,
+      "test_cross_entropy": cross_entropy,
       "test_f1_stand": f1_stand,
       "test_f1_interest": f1_interest,
-      "test_rmse": rmse
+      "test_rmse": rmse,
+      "test_nDGC": ndcg,
+      "test_expectedNDCG": expected_ndcg
     }, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-    return loss
+    return cross_entropy
   
   def predict_step(self, batch):
     x = batch
@@ -494,4 +502,3 @@ class DistilBertFinetuneOnDCG(L.LightningModule):
     )
     y = self.sigmoid(logits.logits)
     return y
-  
