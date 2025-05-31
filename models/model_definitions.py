@@ -47,12 +47,14 @@ class GoEmotionsDataset(torch.utils.data.Dataset):
 
 
 class GoEmotionsDataModule(L.LightningDataModule):
-  def __init__(self, dataframe, batch_size=64):
+  def __init__(self, dataframe, batch_size=64, split_seed=1):
     super().__init__()
     self.dataframe = dataframe
     self.batch_size = batch_size
-
+    self.split_seed = split_seed
+    
   def prepare_data(self):
+    L.seed_everything(self.split_seed, workers=True)
     self.train_df, temp_df = train_test_split(self.dataframe, test_size=0.1)
     self.val_df, self.test_df = train_test_split(temp_df, test_size=0.8)
 
