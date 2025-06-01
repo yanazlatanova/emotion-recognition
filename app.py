@@ -1,28 +1,35 @@
 import streamlit as st
 import torch
 torch.classes.__path__ = []
-from models.model_definitions import DistilBertFinetune  # your class import
+from models.model_definitions import DistilBertFinetuneOnWeightedMSE  # your class import
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 
 from pyprojroot import here
 import lightning as L
 
 # ------------------------ Initializations ------------------------
-torch.serialization.add_safe_globals({"DistilBertFinetune": DistilBertFinetune})
-LABEL_MAP = {0: "positive", 1: "negative", 2: "unclear"}
+torch.serialization.add_safe_globals({"DistilBertFinetuneOnWeightedMSE": DistilBertFinetuneOnWeightedMSE})
 
+COLUMNS = ['sadness', 'unclear',
+           'love', 'gratitude', 'disapproval',
+           'amusement', 'disappointment', 'disgust',
+           'admiration', 'realization', 'annoyance',
+           'confusion', 'optimism', 'curiosity',
+           'excitement', 'caring', 'joy',
+           'remorse', 'approval', 'nervousness',
+           'embarrassment', 'surprise', 'anger',
+           'grief', 'pride', 'desire', 'relief',
+           'fear']
 
 # ------------------------ Caching Loader ------------------------
 @st.cache_resource
 def load_model():
-    distilbert_model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased")
-    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    # distilbert_model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased")
+    # tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
 
-    model = DistilBertFinetune.load_from_checkpoint(
-        "models/dummy_ligh.ckpt",
-        distilbert_model=distilbert_model,
-        tokenizer=tokenizer,
-        n_emotions=3
+    model = DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
+        "models/mse_28.ckpt",
+        n_emotions=28
     )
 
     trainer = L.Trainer(
@@ -40,19 +47,53 @@ model, trainer = load_model()
 def predict(text: str):
     return trainer.predict(model, [text])
 
-def get_emotion_max(text: str) -> str:
+def get_emotions(text: str) -> str:
     output = predict(text)
     output_tensor = output[0] # get the tensor from the list
-    pred = torch.argmax(output_tensor, dim=1).item()
-    return LABEL_MAP.get(pred, "unknown")
+    values = output_tensor.squeeze().tolist()  # Remove tensor nesting and convert to list
+    emotion_scores = {label: float(score) for label, score in zip(COLUMNS, values)}
+    return emotion_scores
 
+def get_emotion_max(text: str) -> tuple[str, float]:
+    emotion_scores = get_emotions(text)
+    top_emotion = max(emotion_scores, key=emotion_scores.get)
+    confidence = emotion_scores[top_emotion]
+    return top_emotion, confidence
 
 # ------------------------ UI --------------------------------
+import pandas as pd
+import altair as alt
+
 st.title("🧠 Emotion Prediction")
-text_input = st.text_area("Enter your text:")
+st.subheader("Detect emotions in text")
+
+raw_text = st.text_area("Enter your text:")
+input_text = raw_text.strip()
 
 if st.button("Predict Emotion"):
-    if text_input.strip():
-        st.success(f"Predicted Emotion: {get_emotion_max(text_input)}")
-    else:
+    if not input_text:
         st.warning("Please enter some text.")
+    else:
+        with st.spinner("Predicting..."):
+            emotion_scores = get_emotions(input_text)
+            prediction, confidence = get_emotion_max(input_text)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.success("Original Text")
+            st.write(input_text)
+        with col2:
+            st.success("Prediction")
+            st.write(prediction)
+            st.write(f"Confidence: {confidence:.2%}")
+
+        proba_df = pd.DataFrame(list(emotion_scores.items()), columns=["emotions", "probability"])
+        fig = alt.Chart(proba_df).mark_bar().encode(
+            x=alt.X('emotions', sort=None),
+            y='probability',
+            color='emotions',
+            tooltip=['emotions', alt.Tooltip('probability', format='.2%')]
+        ).properties(width=600, height=400)
+
+        st.altair_chart(fig, use_container_width=True)
+    
