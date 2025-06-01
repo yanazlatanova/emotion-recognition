@@ -343,7 +343,7 @@ class BaseDistilBertModule(L.LightningModule):
     return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
   def forward(self, texts):
-    """Forward method for inference (fixed typo from 'foward')"""
+    """Forward method for inference"""
     tokens = self._tokenize_batch(texts)
     _, predictions = self._get_model_output(tokens)
     return predictions
