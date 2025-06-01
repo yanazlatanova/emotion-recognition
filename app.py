@@ -21,6 +21,18 @@ COLUMNS = ['sadness', 'unclear',
            'grief', 'pride', 'desire', 'relief',
            'fear']
 
+EMOJI_MAP = {
+    "sadness": "😢", "love": "❤️", "gratitude": "🙏", "disapproval": "👎",
+    "amusement": "😂", "disappointment": "😞", "disgust": "🤢",
+    "admiration": "👏", "realization": "💡", "annoyance": "😒",
+    "confusion": "😕", "optimism": "🌈", "curiosity": "🤔",
+    "excitement": "🤩", "caring": "🤗", "joy": "😊",
+    "remorse": "😔", "approval": "👍", "nervousness": "😬",
+    "embarrassment": "😳", "surprise": "😮", "anger": "😡",
+    "grief": "😭", "pride": "🏆", "desire": "🔥", "relief": "😌",
+    "fear": "😨", "unclear": "❓"
+}
+
 # ------------------------ Caching Loader ------------------------
 
 @st.cache_resource
@@ -64,6 +76,22 @@ def get_emotion_max(text: str) -> tuple[str, float]:
     confidence = emotion_scores[top_emotion]
     return top_emotion, confidence
 
+def get_top_emotion(scores: dict) -> tuple[str, float, float, bool]:
+    """
+    Returns (top_emotion, top_confidence, unclear_confidence)
+    If 'unclear' is highest, returns the next highest emotion.
+    """
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    unclear_score = scores.get("unclear", 0.0)
+
+    if sorted_scores[0][0] == "unclear":
+        # Find the next best emotion
+        for label, score in sorted_scores[1:]:
+            if label != "unclear":
+                return label, score, unclear_score, True
+    return sorted_scores[0][0], sorted_scores[0][1], unclear_score, False
+
+
 # ------------------------ UI --------------------------------
 import pandas as pd
 import altair as alt
@@ -74,24 +102,43 @@ st.subheader("Detect emotions in text")
 raw_text = st.text_area("Enter your text:")
 input_text = raw_text.strip()
 
+UNCLEAR_THRESHOLD = 0.30
+
 if st.button("Predict Emotion"):
     if not input_text:
         st.warning("Please enter some text.")
-    else:
+    else:        
         with st.spinner("Predicting..."):
             emotion_scores = get_emotions(input_text)
-            prediction, confidence = get_emotion_max(input_text)
+            prediction, confidence, unclear_prob, is_unclear_top = get_top_emotion(emotion_scores)
 
-        col1, col2 = st.columns(2)
+        st.success("Prediction")
+        col1, col2 = st.columns(2)        
+
         with col1:
-            st.success("Original Text")
-            st.write(input_text)
-        with col2:
-            st.success("Prediction")
-            st.write(prediction)
-            st.write(f"Confidence: {confidence:.2%}")
+            emoji = EMOJI_MAP.get(prediction, "")
+            st.markdown(
+                f"<h2 style='margin-top: 0;'>{prediction.capitalize()} {emoji}</h2>"
+                f"<p style='font-size: 18px;'>Confidence: {confidence:.2%}</p>",
+                unsafe_allow_html=True
+            )
+        
+            unclear_color = "red" if is_unclear_top else "gray"
+            st.markdown(
+                f"<h4 style='margin-bottom: 0;'>Unclear Confidence</h4>"
+                f"<p style='color:{unclear_color}; font-size: 18px;'>{unclear_prob:.2%} ❓</p>",
+                unsafe_allow_html=True
+            )
 
-        proba_df = pd.DataFrame(list(emotion_scores.items()), columns=["emotions", "confidence"])
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.subheader("Probability Distribution")
+
+        proba_df = pd.DataFrame([
+            (f"{EMOJI_MAP.get(emotion, '')} {emotion}", score)
+            for emotion, score in emotion_scores.items()
+        ], columns=["emotions", "confidence"])
+
         fig = alt.Chart(proba_df).mark_bar().encode(
             x=alt.X('emotions', sort=None),
             y='confidence',
@@ -100,9 +147,3 @@ if st.button("Predict Emotion"):
         ).properties(width=600, height=400)
 
         st.altair_chart(fig, use_container_width=True)
-
-# TO DO: add the emotions, switch different emotion number    
-# bar cdom 0 to 1
-# show unclear % for every predition seperatly 
-
-# output the main emotion and how unclear it is try out with "cool"
