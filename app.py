@@ -91,13 +91,18 @@ if st.button("Predict Emotion"):
             st.write(prediction)
             st.write(f"Confidence: {confidence:.2%}")
 
-        proba_df = pd.DataFrame(list(emotion_scores.items()), columns=["emotions", "probability"])
+        proba_df = pd.DataFrame(list(emotion_scores.items()), columns=["emotions", "confidence"])
         fig = alt.Chart(proba_df).mark_bar().encode(
             x=alt.X('emotions', sort=None),
-            y='probability',
+            y='confidence',
             color='emotions',
-            tooltip=['emotions', alt.Tooltip('probability', format='.2%')]
+            tooltip=['emotions', alt.Tooltip('confidence', format='.2%')]
         ).properties(width=600, height=400)
 
         st.altair_chart(fig, use_container_width=True)
-    
+
+# TO DO: add the emotions, switch different emotion number    
+# bar cdom 0 to 1
+# show unclear % for every predition seperatly 
+
+# output the main emotion and how unclear it is try out with "cool"
