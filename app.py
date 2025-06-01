@@ -22,30 +22,27 @@ COLUMNS = ['sadness', 'unclear',
            'fear']
 
 # ------------------------ Caching Loader ------------------------
-@st.cache_resource
-def load_model():
-    # distilbert_model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased")
-    # tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
 
+@st.cache_resource
+def load_model() -> DistilBertFinetuneOnWeightedMSE:
+    """
+    Load the pretrained model from checkpoint.
+    Cached to avoid reloading on every run.
+    """
     model = DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
         "models/mse_28.ckpt",
-        n_emotions=28
+        n_emotions=len(COLUMNS)
     )
+    model.eval()
+    return model
 
-    trainer = L.Trainer(
-        default_root_dir=here("cache/lightning"),
-        logger=False,
-        enable_checkpointing=False
-    )
-    return model, trainer
-
-model, trainer = load_model()
+model = load_model()
 
 # ------------------------ Functions ------------------------
 
 @torch.no_grad()
 def predict(text: str):
-    return trainer.predict(model, [text])
+    return model([text])
 
 def get_emotions(text: str) -> str:
     output = predict(text)
