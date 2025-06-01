@@ -55,8 +55,8 @@ class GoEmotionsDataModule(L.LightningDataModule):
     
   def prepare_data(self):
     L.seed_everything(self.split_seed, workers=True)
-    self.train_df, temp_df = train_test_split(self.dataframe, test_size=0.1)
-    self.val_df, self.test_df = train_test_split(temp_df, test_size=0.8)
+    self.train_df, temp_df = train_test_split(self.dataframe, test_size=0.3)
+    self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5)
 
   def setup(self, stage=None):
     self.train_dataset = GoEmotionsDataset(self.train_df)
