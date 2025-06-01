@@ -45,13 +45,20 @@ def predict(text: str):
     return model([text])
 
 def get_emotions(text: str) -> str:
+    """
+    Get emotion probabilities/scores for each emotion label.
+    Returns a dict {emotion_label: score}.
+    """
     output = predict(text)
     output_tensor = output[0] # get the tensor from the list
     values = output_tensor.squeeze().tolist()  # Remove tensor nesting and convert to list
-    emotion_scores = {label: float(score) for label, score in zip(COLUMNS, values)}
-    return emotion_scores
+    scores = {label: float(score) for label, score in zip(COLUMNS, values)}
+    return scores
 
 def get_emotion_max(text: str) -> tuple[str, float]:
+    """
+    Return the emotion label with the highest score and the score itself.
+    """
     emotion_scores = get_emotions(text)
     top_emotion = max(emotion_scores, key=emotion_scores.get)
     confidence = emotion_scores[top_emotion]
