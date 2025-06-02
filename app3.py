@@ -33,36 +33,39 @@ EMOJI_MAP = {
 # ------------------------ Caching Loader ------------------------
 
 @st.cache_resource
-def load_model(n_emotions: int):
+def load_all_models():
     """
-    Load the pretrained model corresponding to the number of emotions.
+    Load and cache all emotion models.
+    Returns a dictionary: {3: model3, 6: model6, 27: model27}
     """
-    path_map = {
-        3: "models/mse_3.ckpt",
-        7: "models/mse_7.ckpt",
-        28: "models/mse_28.ckpt",
+    return {
+        3: DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
+            "models/mse_3.ckpt", n_emotions=3
+        ).eval(),
+        7: DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
+            "models/mse_7.ckpt", n_emotions=7  # trained with 7 classes incl. 'unclear'
+        ).eval(),
+        28: DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
+            "models/mse_28.ckpt", n_emotions=28
+        ).eval()
     }
-    model_path = path_map[n_emotions]
-    model = DistilBertFinetuneOnWeightedMSE.load_from_checkpoint(
-        model_path,
-        n_emotions=n_emotions
-    )
-    model.eval()
-    return model
 
-# ------------------------ UI Control ------------------------
+# ------------------------ UI ------------------------
 
 st.title("🧠 Emotion Prediction")
 st.subheader("Detect emotions in text")
 
-emotion_count = st.selectbox("Select number of emotion categories", options=[3, 7, 28])
+# emotion_count = st.selectbox("Select number of emotion categories", options=[3, 7, 28])
+emotion_count = st.selectbox("Select number of emotions", [3, 7, 28], index=1)
+all_models = load_all_models()
+model = all_models[emotion_count]
+
 COLUMNS = EMOTION_SETS[emotion_count]
-model = load_model(emotion_count)
+# model = load_model(emotion_count)
 
 raw_text = st.text_area("Enter your text:")
 input_text = raw_text.strip()
 
-UNCLEAR_THRESHOLD = 0.30
 
 # ------------------------ Inference Functions ------------------------
 
@@ -85,7 +88,7 @@ def get_top_emotion(scores: dict) -> tuple[str, float, float, bool]:
                 return label, score, unclear_score, True
     return sorted_scores[0][0], sorted_scores[0][1], unclear_score, False
 
-# ------------------------ Prediction + Display ------------------------
+# ------------------------ UI ------------------------
 
 if st.button("Predict Emotion"):
     if not input_text:
