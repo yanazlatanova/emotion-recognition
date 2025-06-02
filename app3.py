@@ -56,7 +56,18 @@ st.title("🧠 Emotion Prediction")
 st.subheader("Detect emotions in text")
 
 # emotion_count = st.selectbox("Select number of emotion categories", options=[3, 7, 28])
-emotion_count = st.selectbox("Select number of emotions", [3, 7, 28], index=1)
+# emotion_count = st.selectbox("Select number of emotions", [3, 7, 28], index=1)
+
+label_to_value = {
+    "Positive/Negative": 3,
+    "6 Emotions": 7,
+    "27 Emotions": 28
+}
+
+selected_label = st.selectbox("Select taxonomy", list(label_to_value.keys()))
+emotion_count = label_to_value[selected_label]
+
+
 all_models = load_all_models()
 model = all_models[emotion_count]
 
