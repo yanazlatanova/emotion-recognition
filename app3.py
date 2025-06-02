@@ -133,6 +133,7 @@ if st.button("Predict Emotion"):
         proba_df = pd.DataFrame([
             (f"{EMOJI_MAP.get(emotion, '')} {emotion}", score)
             for emotion, score in emotion_scores.items()
+            if emotion != "unclear"
         ], columns=["emotions", "confidence"])
 
         fig = alt.Chart(proba_df).mark_bar().encode(
