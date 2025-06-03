@@ -5,7 +5,8 @@ platforms = ["win-64"]
 
 [tasks]
 server = "jupyter server"
-app = "streamlit run app.py"
+# app = "streamlit run app.py"
+app = "streamlit run app3.py"
 
 [dependencies]
 jupyter = ">=1.1.1,<2"

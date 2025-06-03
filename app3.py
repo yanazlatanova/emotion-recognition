@@ -14,7 +14,7 @@ torch.serialization.add_safe_globals({"DistilBertFinetuneOnWeightedMSE": DistilB
 
 EMOTION_SETS = {
     3: ['positive', 'negative', 'unclear'],
-    7: ['anger', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'unclear'],
+    7: ['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'unclear'],
     28: ['sadness', 'unclear', 'love', 'gratitude', 'disapproval', 'amusement', 'disappointment', 'disgust',
          'admiration', 'realization', 'annoyance', 'confusion', 'optimism', 'curiosity', 'excitement', 'caring', 'joy',
          'remorse', 'approval', 'nervousness', 'embarrassment', 'surprise', 'anger', 'grief', 'pride', 'desire',
@@ -27,7 +27,7 @@ EMOJI_MAP = {
     "annoyance": "😒", "confusion": "😕", "optimism": "🌈", "curiosity": "🤔", "excitement": "🤩", "caring": "🤗",
     "joy": "😊", "remorse": "😔", "approval": "👍", "nervousness": "😬", "embarrassment": "😳", "surprise": "😮",
     "anger": "😡", "grief": "😭", "pride": "🏆", "desire": "🔥", "relief": "😌", "fear": "😨", "unclear": "❓", "positive": "✅", 
-    "negative": "❌"
+    "negative": "❌", "happiness": "😊"
 }
 
 # ------------------------ Caching Loader ------------------------
@@ -59,9 +59,9 @@ st.subheader("Detect emotions in text")
 # emotion_count = st.selectbox("Select number of emotions", [3, 7, 28], index=1)
 
 label_to_value = {
-    "Positive/Negative": 3,
-    "6 Emotions": 7,
-    "27 Emotions": 28
+    "Sentiment (Positive/Negative)": 3,
+    "Ekman (6 emotions)": 7,
+    "GoEmotions (27 emotions)": 28
 }
 
 selected_label = st.selectbox("Select taxonomy", list(label_to_value.keys()))
