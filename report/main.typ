@@ -1,24 +1,45 @@
 #import "@preview/datify:0.1.3": custom-date-format
 #import "acm.typ": acm
 
+#show link: set text(hyphenate: false)
+
 
 #show: acm.with(
   title: [Emotion Recognition Uncertainty Modeling of Internet Comments],
   authors: (
     (name: "Yana Zlatanova", email: "yana.zlatanova.gold@gmail.com"), (name: "André Plancha", email: "andre.plancha@hotmail.com"), (name: "Vérane Flaujac", email: "vflaujac@gmail.com")
-  ),
-  abstract: [Understanding user sentiment and emotion is a growing challenge in machine learning, especially for enabling chatbots to respond with empathy and relevance. In this project, we focus on classifying emotions in short sentences using the GoEmotions dataset, which contains Reddit comments labeled with 28 distinct emotions. Throughout our analysis, we discovered that emotion classification is inherently subjective. Multiple annotators often assigned different labels to the same comment, and some emotions appeared ambiguous. After preprocessing the data and performing exploratory visualizations to understand its structure, we trained a model using distillBERT for emotion classification. We then evaluated the model's performance using various metrics to assess its effectiveness. *Our work also explores key questions such as: Which emotions are represented? Does the dataset show demographic bias? And is the model accurate enough for deployment in real-world chatbot systems? This project builds upon existing research while offering our own perspective on implementing and analyzing emotion recognition models.*],
-  keywords: ("Emotion Recognition", " NLP", " GoEmotions" , " Internet Comments", " Machine Learning"," HuggingFace", " DistillBERT", " Evaluation Metrics"),
+  ),// TODO change abstract
+  abstract: [Understanding user sentiment and emotion is a growing challenge in machine learning, especially for enabling chatbots to respond with empathy and relevance. In this study, we focus on classifying emotions in short sentences using the GoEmotions dataset, which contains Reddit comments labeled with 28 distinct emotions. Throughout our analysis, we discovered that emotion classification is inherently subjective. Multiple annotators often assigned different labels to the same comment, and some emotions appeared ambiguous. After preprocessing the data and performing exploratory visualizations to understand its structure, we trained a model using distillBERT for emotion classification. We then evaluated the model's performance using various metrics to assess its effectiveness. *Our work also explores key questions such as: Which emotions are represented? Does the dataset show demographic bias? And is the model accurate enough for deployment in real-world chatbot systems? This study builds upon existing research while offering our own perspective on implementing and analyzing emotion recognition models.*],
+  keywords: ("Emotion Recognition", " NLP", " GoEmotions" , " Internet Comments", " Machine Learning"," HuggingFace", " DistillBERT", " Evaluation Metrics"), 
+  // TODO change keywords
   bibliography: bibliography("refs.bib", style: "acm.csl")
 )
 = Introduction
+/* Problem*/
+Emotions play a vital role in human communication as the flavor of speech that determines the meaning beyond the literal translation. This makes emotion recognition an important subdomain of natural language processing (NLP), as it enables machines to better interpret human text and speech which is particularly useful in mental health monitoring, customer feedback analysis, and chatbots @EmotionAnalysisinNLP. However, emotion recognition comes with its challenges. Traditional machine learning models require extensive feature engineering, making them inefficient and unable to keep up with the complexity of human language. On the other hand, although deep neural networks offer better performance, they typically require large amounts of labeled training data which is difficult to obtain  @multi_label_emotion.
+
+One solution this challenge is transfer learning, which offers pre-trained transformer-based models such as BERT, RoBERTa, DistilBERT, and XLNet. These models have been trained on vast amount of data and are capable of understanding complex linguistic structures and contextual relationships. Their knowledge can be transferred by fine-tuning them on a specialized emotion-labeled dataset to achieve efficient emotion classification without training from scratch @multi_label_emotion.
+
+In this study explored emotion classification in text using DistilBERT-based models @distilbert, a smaller and faster variant of BERT, to answer the following research questions:
+
+- What are the challenges in emotion recognition with a human annotated dataset?
+- Can fine-tuned models reliably classify emotions from Reddit comments, despite annotator disagreement?
+- How does emotion classification performance differ across taxonomies?
+- What is the effect of different loss functions on the fine-tuning performance of DistilBERT?
+
+These models were fine-tuned on the GoEmotions dataset @GoEmotionsDatasetOrigin, which contains approximately 58,000 Reddit comments annotated with 28 emotion labels.
+
+This report serves as a comprehensive overview of our study, detailing the dataset and our exploration of it, previous research done on both the GoEmotions dataset and in sentiment and emotion analysis the transformations applied and task formulation, the model architectures and performance metrics, and the results of our experiments. In short, it describes the various issues we found with the dataset, how we solved them, including how we decided to incorporate human annotator disagreements, how we decided to model and evaluate the models, and the general conclusions of the study.
+
+
+/* LAST SUBMITION
 Emotion recognition, a key task within language categorization, is a fundamental component of machine learning, as it seeks to understand and identify how people feel based on what they say or write. In recent years, this field has received growing attention due to advancements in natural language processing and the availability of large scale datasets  @EmotionAnalysisinNLP. Numerous sentiment analysis datasets have emerged, drawn from sources such as Twitter posts, movie reviews, and news headlines@GoEmotionsDatasetOrigin .
 
-For this project, we aim to contribute to the field of emotion recognition by using pre-trained language models to classify emotions in text. Specifically, we will explore the capabilities of the DistilBERT model @distilbert, a smaller and faster version of the BERT model. For this task, we used the GoEmotions dataset @GoEmotionsDatasetOrigin, comprised of approximately $58,000$ Reddit comments sourced from popular English-speaking subreddits, each labeled with one or more of 28 possible emotions, including "neutral". Additionally, we constructed a User Interface so that any other new short sentence written by the user can be predicted as one emotion.
+In this study, we aim to contribute to the field of emotion recognition by using pre-trained language models to classify emotions in text. Specifically, we will explore the capabilities of the DistilBERT model @distilbert, a smaller and faster version of the BERT model. For this task, we used the GoEmotions dataset @GoEmotionsDatasetOrigin, comprised of approximately $58,000$ Reddit comments sourced from popular English-speaking subreddits, each labeled with one or more of 28 possible emotions, including "neutral". Additionally, we constructed a User Interface so that any other new short sentence written by the user can be predicted as one emotion.
 
-This report serves as a comprehensive overview of our project, detailing the dataset and our exploration of it, previous research done on both the GoEmotions dataset and in sentiment and emotion analysis the transformations applied and task formulation, the model architectures and performance metrics, and the results of our experiments. In short, it describes the various issues we found with the dataset, how we solved them, including how we decided to incorporate human annotator disagreements, how we decided to model and evaluate the models, and the general conclusions from the project.
-
-/*
+This report serves as a comprehensive overview of our study, detailing the dataset and our exploration of it, previous research done on both the GoEmotions dataset and in sentiment and emotion analysis the transformations applied and task formulation, the model architectures and performance metrics, and the results of our experiments. In short, it describes the various issues we found with the dataset, how we solved them, including how we decided to incorporate human annotator disagreements, how we decided to model and evaluate the models, and the general conclusions of the study.
+*/
+/* COMMENTED BEFORE 1ST SUBMITION
 These emotions can be broadly grouped into positive, negative, and ambiguous categories. During our initial exploration, we observed that some comments were duplicated but labeled differently by annotators, while others had unique texts with multiple assigned emotions or none at all. This subjectivity highlights a key challenge in emotion classification: emotional interpretation often varies between individuals. To address this, we cleaned and standardized the dataset by relabeling unclear or empty tags as "emotion_neutral," aggregating multiple emotion labels by selecting the most frequent one, and retaining only comments reviewed by at least three annotators to improve label reliability.
 
 
@@ -46,65 +67,34 @@ The 27-category emotion taxonomy of the dataset was inspired by modern psycholog
 
 Comments containing offensive or adult language were removed, except for vulgar comments, which were kept to help study negative emotions. Comments with offensive content toward minorities were manually removed. Only comments with 3 to 30 tokens (including punctuation) were retained. Various techniques were applied to balance the dataset and reduce emotion overrepresentation. Additionally, personal names and religion terms were masked with [NAME] and [RELIGION] tokens, respectively. Note that raters saw the original, unmasked comments during annotation.
 
-= Related Work // TODO review
-== GoEmotions: A Dataset of Fine-Grained Emotions
-[Dorottya Demszky, Dana Movshovitz-Attias, Jeongwoo Ko,
-Alan Cowen, Gaurav Nemade, Sujith Ravi] @GoEmotionsDatasetOrigin
+= Literature review // TODO review
 
-One of the first papers our team considered was GoEmotions: A Dataset of Fine-Grained Emotions, which outlines the motivation, processes, and tools used to create the dataset we are using, along with experiments showcasing its effectiveness. The GoEmotions dataset was introduced to address the lack of sufficiently large datasets for language-based emotion classification and the limitations of existing emotion taxonomies, which typically classify only 6 to 8 emotions based on frameworks by Ekman (1992b) or Plutchik (1980), or 14 by Bostan and Klinger (2018). This led to the creation of GoEmotions, the largest human-annotated dataset of 58k carefully selected Reddit comments, labeled with *27 emotion categories or Neutral*, as shown on Figure 2, drawn from popular English subreddits. The dataset stands out for its richer taxonomy, which includes a more diverse range of positive, negative, and ambiguous emotions—unlike Ekman’s taxonomy that includes only one positive emotion (joy).
-The paper explains how the dataset was constructed and tested using a BERT-based model, which achieved a modest F1-score of .46 over the GoEmotions proposed 27 emotions taxonomy, but performed better with a 0.64 score using an Ekman-style grouping into six emotion categories and 0.69 using a simple sentiment grouping (positive, neutral, negative) @GoEmotionsDatasetOrigin. These results suggest that the broader the emotion group, the better the accuracy.
-This proposal proposed new taxonomy inspired our project to explore different emotion categories and also confirmed that a BERT based model would be suitable for our aims.
-
-== Emotion Analysis in NLP: Trends, Gaps and Roadmap for Future Directions
-[Flor Miriam Plaza-del-Arco, Alba Curry, Amanda Cercas Curry, Dirk Hovy] @EmotionAnalysisinNLP
-
-This paper presents a comprehensive survey of the field of emotion analysis in NLP. It outlines the current trends, identifies key gaps, and proposes a roadmap for future research.
-
-1. Trends in Emotion Analysis
-There has been a shift from sentiment to emotion: While sentiment analysis has been widely studied, there’s a growing focus on fine-grained emotions such as joy, fear, disgust for deeper emotional understanding.
-With the rise of Deep Learning, transformer-based models like BERT and GPT are increasingly used for emotion classification tasks.
-Since texts can convey multiple emotions, research has moved from single-label to multi-label approaches.
-Social Media can be very interesting data sources: platforms like Twitter, Reddit, and Facebook are commonly used due to their rich, real-world emotional expressions.
-
-2. Identified Gaps
-There is a lack of diversity in Datasets: Most emotion datasets are in English and are biased toward certain domains.
-On top of that, there is a significant lack of multilingual and cross-lingual emotion analysis research which results in an underrepresentation of languages on NLP. No universal set of emotion labels exists; different datasets and studies use different categories that explains the inconsistencies on emotions taxonomy.
-Finally, emotion expression varies by culture, age, and gender, but current models often ignore these nuances so we often see demographic and cultural biais on the dataset.
-
-3. Roadmap for Future Research
-In the future, there will be an urge to develop unified emotion taxonomies, creating a standardized set of emotions across datasets would improve comparability and model generalization.
-More diverse data is needed to capture global emotional expression in order to create a completely inclusive and multilingual dataset.
-Models should consider speaker background, context, and cultural norms.
-Ethics must also be taken into considerations. Indeed, emotion analysis can be sensitive , issues like privacy and algorithmic bias must be addressed.
+The GoEmotions dataset was introduced by #cite(<GoEmotionsDatasetOrigin>, form: "prose"), which outlines 
+the motivation, processes, and tools used to create the dataset we are using, along with experiments showcasing its effectiveness. The GoEmotions dataset was introduced to address the lack of sufficiently large datasets for language-based emotion classification and the limitations of existing emotion taxonomies, which typically use limited emotion taxonomies, such as Ekman's 6 emotions @ekman. #cite(<GoEmotionsDatasetOrigin>, form: "author") claims they created the largest human-annotated dataset of 58k carefully selected Reddit comments, labeled with *27 emotion categories or Neutral*, as shown on @emotion_list, drawn from popular English subreddits. The dataset stands out for its richer taxonomy, which includes a more diverse range of positive, negative, and ambiguous emotions; in contrast, unlike Ekman’s taxonomy includes only one positive emotion (joy).
 
 
-== DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter 
-[Victor SANH, Lysandre DEBUT, Julien CHAUMOND, Thomas WOLF] @distilbert
+The paper explains how the dataset was constructed and presented a baseline BERT-based model for emotion prediction, achieving a $F_1$ of $0.46$ over the proposed 27 emotions taxonomy, but performed better with a 0.64 score using an Ekman-style grouping into six emotion categories and 0.69 using a simple sentiment grouping (positive, neutral, negative) @GoEmotionsDatasetOrigin. These results suggest that the broader the emotion group, the better the accuracy. This new taxonomy proposal inspired us to explore different emotion categories and also confirmed that a BERT based model would be suitable for our aims. The Dataset has been used and analyzed in following studies, with #cite(<GoEmotionsUsedWithBert>, form: "prose") achieving comparable or better results, while comparing different models and a fine-tuned BERT model. For this study, we decided to use DistilBERT @distilbert as our BERT based model, as DistilBERT is a streamlined version of BERT developed by a Hugging Face team that achieves significant reductions in model size and inference time of BERT while maintaining most of its performance.
 
-DistilBERT is a streamlined version of BERT (Bidirectional Encoder Representations from Transformers) developed by Hugging Face to address the challenges of deploying large-scale language models in resource-constrained environments. By applying knowledge distillation during pre-training, DistilBERT achieves significant reductions in model size and inference time while maintaining most of BERT's performance.
+The paper also examines limitations of the dataset and ways to address them, such as the big class imbalance and biases present in the dataset. We intend to to expand on this notion in Section 2. To help with class imbalance, #cite(<GoEmotionsUsedWithBert>, form: "prose") explores data augmentation methods such as Easy Data Augmentation, BERT Embeddings, and Bert-based ProtAugment; however, the improvement was marginal, with an increase of 0.027 from the F1 score of the original dataset. Nevertheless, they still achieved a significantly better performance on underrepresented emotion labels, which they attributed to using 10 training epochs instead of #cite(<GoEmotionsDatasetOrigin>, form: "author")'s @GoEmotionsDatasetOrigin 4 epochs.
 
-DistilBERT reduces the number of layers from 12 to 6, resulting in a 40% smaller model with 66 million parameters compared to BERT's 110 million. Despite its reduced size, DistilBERT retains 97% of BERT's language understanding capabilities.
-The model is 60% faster during inference, making it suitable for real-time applications and deployment on devices with limited computational resources. DistilBERT employs a triple loss function combining masked language modeling, distillation loss, and cosine embedding loss. The student model is initialized by selecting every other layer from the teacher model. It is trained on the same corpus as BERT, which includes English Wikipedia and the Toronto Book Corpus. With a model size of approximately 207 MB, DistilBERT is optimized for deployment on mobile and edge devices.
 
-/* Stuff done with goemotions 
-- https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00449/109286/Dealing-with-Disagreements-Looking-Beyond-the
- - Includes stuff about Annotation Disagreement /human label variation (https://arxiv.org/pdf/2211.02570)
+Emotion Recognition in natural language processing is a complex field, with different nomenclatures, models and frameworks @EmotionAnalysisinNLP. For this report, we use emotion recognition, emotion prediction and emotion classification interchangeably as the classification of one or multiple emotions portrayed in a specific written text. Following #cite(<EmotionAnalysisinNLP>, form: "author")'s @EmotionAnalysisinNLP study, we also outline that we follow the discrete model of emotions, where each emotion is distinct between each other; however, opposed to other studies in emotion classification @disagreements, we will take advantage of the dataset's collection methodology @GoEmotionsDatasetOrigin and use both the multi-label facet and human label variation available to avoid masking the degree to which annotators disagree @disagreements. We will elaborate this further in the sections that follow.
+
+
+
+/* 
+Other papers that talk about emotion classificaiton (only add if you feel like it)
+
+- https://aclanthology.org/2021.naacl-main.375.pdf (uses goemotions)
+- 
 */
-
-== Large Language Models on Fine-grained Emotion Detection Dataset with Data Augmentation and Transfer Learning
-This paper is relevant to our work because it uses the GoEmotions dataset and investigates improvements in emotion classification by comparing various models to BERT. It also examines limitations of the dataset and ways to address them. The authors fine-tuned BERT and achieved F1 scores comparable or slightly better than those reported in the original GoEmotions paper @GoEmotionsDatasetOrigin @GoEmotionsUsedWithBert. Notably, the underrepresented emotion "grief" achieved an F1 score of 0.46, compared to 0 in the original study. They attribute this to using 10 training epochs instead of 4, showing that more training improved performance without overfitting @GoEmotionsUsedWithBert.
-
-The paper highlights the dataset’s class imbalance and explores three data augmentation methods such as Easy Data Augmentation, BERT Embeddings, and BART-based ProtAugment to improve performance on minority classes. However, the improvement was marginal with an increase of 0.027 from the F1 score of the original dataset. As such, we did not priorities this technique in our project. The paper proved that BERT slightly outperforms RoBERTa on emotion classification with GoEmotions which we considered when choosing a pre-trained model for our project.
-
-// to the maximum of 0.517 with augmentation
 
 #figure(
   image("images/emotions.PNG"),
-  caption: [Emotions Comprised in the Dataset.])
+  caption: [Emotions Comprised in the Dataset.]) <emotion_list>
 
-  
 = Methodology
-In this section, we outline the approach and tools used to carry out our project, from data preprocessing to model training and evaluation. The entire workflow is available at #link("github.com/yanazlatanova/emotion-recognition"), and consists of Data exploration, preprocessing from data driven decisions, modeling, and evaluating. Additionally, we developed a user interface to visualize the output of these models. A screenshot of the UI can be visualized in @ui.
+In this section, we outline the approach and tools used to carry out our study, from data preprocessing to model training and evaluation. The entire workflow consists of Data exploration, preprocessing from data driven decisions, modeling, and evaluating. Additionally, we developed a user interface to visualize the output of these models. A screenshot of the UI can be visualized in @ui.
 The entire process, including model implementations, is available in #link("https://github.com/yanazlatanova/emotion-recognition").
 
 We used the Hugging Face Transformers library to implement DistilBERT. It is well suited for emotion classification tasks due to its ability to preserve much of BERT's performance while being more efficient. Before feeding the text into the model, we used Hugging Face’s tokenizer to convert sentences into token IDs. The tokenizer handles out-of-vocabulary words by breaking them into word units, ensuring even rare or misspelled terms are processed effectively.
@@ -133,14 +123,14 @@ To further analyze the multiple raters per text, we plotted the number of raters
   caption: [ Distribution of the number of unique raters per comment/text.] // TODO image shows 1 - 6 instead of categories
 )<unique-raters-histogram>
 
-Additionally, these raters often disagree in the emotions they assign, even in seemingly contradictory emotions. For example, the comment _"Definitely was a nonononoyes for me there lol, I'm a horrible person"_ got as fear, amusement, approval and disgust, from 5 different annotators. This noise, while problematic, is expected, since emotion classification is fairly subjective and requires context (which the annotaters did not have access to @GoEmotionsDatasetOrigin), and domain knowledge (which most annotators might've not had, because of the "ever-evolving ethos" of reddit's culture, both site-wide and within each subreddit @reddit). On top of this, this dataset has been criticized before for its reliability @unknown_reliability @mislabeled, with specific examples from #cite(<mislabeled>, form: "prose") outlying issues on comments containing profanity, sarcasm, internet style conventions, and culturally specific references. From, this we realize that our model may struggle to accurately predict emotions in future inputs, especially on inputs that contain these.
+Additionally, these raters often disagree in the emotions they assign, even in seemingly contradictory emotions. For example, the comment _"Definitely was a nonononoyes#footnote[nonononoyes is a name of a subreddit dedicated to sharing videos that depict situations initially appearing to go wrong ("no, no, no...") but ultimately result in a surprisingly positive or successful outcome ("yes!").] for me there lol, I'm a horrible person"_  got as fear, amusement, approval and disgust, from 5 different annotators. This noise, while problematic, is expected, since emotion classification is fairly subjective and there's multiple plausible answers @variation, annotators' lived experiences influence their interpretations @disagreements, and context is often necessary to access correctly the emotion (which the annotators did not have access to @GoEmotionsDatasetOrigin), and domain knowledge (which most annotators might've not had, because of the "ever-evolving ethos" of Reddit's culture, both site-wide and within each subreddit @reddit). On top of this, this dataset has been criticized before for its reliability @unknown_reliability @mislabeled, with specific examples from #cite(<mislabeled>, form: "prose") outlying issues on comments containing profanity, sarcasm, internet style conventions, and culturally specific references. From, this we realize that our model may struggle to accurately predict emotions in future inputs, especially on inputs that contain these.
 
 Based on these facts, we decided to:
 - *Label unclear cases consistently*: We treated both "Neutral" and empty emotion labels as "Unclear", united under the _unclear_ label, since in both situations raters were unable to confidently identify an emotion.
 
 - *Filter by rater count:* The dataset was filtered to include only comments with at least three raters, ensuring more reliable and confident annotations. As shown in @unique-raters-histogram, multiple comments had only one or two raters.
 
-- *Aggregated Ratings*: Since identical comments were often assigned different labels by different raters, we chose to aggregate the emotion ratings for each unique comment. For instance, if the comment "this is adorable" received the following annotations:
+- *Aggregated Ratings*: Since identical comments were often assigned different labels by different raters, we chose to aggregate the emotion ratings for each unique comment, embracing human label variation @variation. For instance, if the comment "this is adorable" received the following annotations:
   - *Rater 1:* [admiration, joy];
   - *Rater 2:* [admiration];
   - *Rater 3:* [amusement].
@@ -150,7 +140,7 @@ Based on these facts, we decided to:
     - *amusement:* 0.33 (1 out of 3 raters).
     - *joy*: 0.33 (1 out of 3 raters)
 
-This aggregation gives more weight to emotions confirmed by multiple raters while still capturing the presence of less-agreed-upon emotions. It preserves the richness of the label diversity without resorting to semi-supervised learning. Essentially, it gives us a confidence level of the emotions per text.
+This aggregation gives more weight to emotions confirmed by multiple raters while still capturing the presence of less-agreed-upon emotions. It preserves the richness of the label diversity without resorting to semi-supervised learning. Essentially, it gives us a confidence level of the emotions per text. We found this preferable to majority vote aggregation since it preserves different annotators' perspectives @disagreements, while avoiding the different issues that arise with assigning a "ground truth" label to a text @disagreements @alm @variation
 
 While annotator disagreement and emotion uncertainty has been explored before @label_quality @unknown_reliability @black_white @disagreements, this way of transforming the dataset seems to be a novel approach in treating annotator disagreement in both the GoEmotions dataset and emotion recognition, as it seems quite more to aggregate label disagreements into a single one @black_white since it introduces uncertainty into emotion recognition, transforming our multi label classification task into multi label regression problem, using "soft" labels instead. Arguably, this also gives a hierarchical label structure to the emotions @are_we_really, enabling this dataset to be used for point-wise learning to rank tasks. While this is not our priority, our metrics and models will take this into account as well.
 
@@ -184,13 +174,14 @@ Beyond these foundational models, more recent work by Bostan and Klinger (2018) 
 
 Together, these taxonomies reflect the diversity in how emotions can be defined, labeled, and interpreted—highlighting the challenges and considerations in building accurate emotion recognition systems.
 
-In our project, we chose to adopt Ekman’s six basic emotions as the foundation for our classification task. This decision was made to simplify the emotion space while maintaining a strong grounding in psychological theory. Additionally, we introduced a seventh category labeled as “unclear” to account for comments that are either ambiguous, emotionally neutral, or inconsistently labeled by human raters. This category helps manage noise in the dataset, especially given the subjectivity involved in interpreting emotions from short texts.
+In our study, we chose to adopt Ekman’s six basic emotions as the foundation for our classification task. This decision was made to simplify the emotion space while maintaining a strong grounding in psychological theory. Additionally, we introduced a seventh category labeled as “unclear” to account for comments that are either ambiguous, emotionally neutral, or inconsistently labeled by human raters. This category helps manage noise in the dataset, especially given the subjectivity involved in interpreting emotions from short texts.
 
 By narrowing our classification to these seven categories, we aim to strike a balance between theoretical soundness and practical model performance, while acknowledging the limitations of emotional ambiguity in natural language.
 
 
 == Performance Metrics
-Due to the nature of this this task, we implemented multiple different performance metrics, to measure the performance of our models in different aspects.
+
+Due to the nature of uncertainty prediction and emotion complexity, it is critical that we don't focus on single metrics to evaluate the performance of our models, as that "gives no indication on how reasonable a model is, yet alone how confident and trustworthy it is" @variation. For that end, we implemented multiple different performance metrics, to measure the performance of our models in different aspects.
 
 As a regular regression metric, we used the Mean Binary Cross Entropy (MBCE). This metric is very common in this type of task, and will give us information on the general error of the model, as well as as overconfidence. This is calculated as the following:
 

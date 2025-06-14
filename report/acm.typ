@@ -124,6 +124,8 @@
   show std.bibliography: set block(spacing: 0.5em)
   set std.bibliography(title: text(10pt)[References])
 
+  show link: set text(hyphenate: false)
+  
   // Display the paper's title and authors at the top of the page,
   // spanning all columns (hence floating at the scope of the
   // columns' parent, which is the page).
