@@ -151,7 +151,7 @@ Based on these facts, we decided to:
 
 - *Filter by rater count:* The dataset was filtered to include only comments with at least three raters, ensuring more reliable and confident annotations. As shown in @unique-raters-histogram, multiple comments had only one or two raters.
 
-- *Soft Label Aggregation*: Since identical comments were often assigned different labels by different raters, we chose to aggregate the emotion ratings for each unique comment, embracing human label variation @variation. For instance, if the comment "this is adorable" received the following annotations:
+- *Soft label aggregation*: Since identical comments were often assigned different labels by different raters, we chose to aggregate the emotion ratings for each unique comment, embracing human label variation @variation. For instance, if the comment "this is adorable" received the following annotations:
   - *Rater 1:* [admiration, joy];
   - *Rater 2:* [admiration];
   - *Rater 3:* [amusement].
@@ -201,14 +201,13 @@ caption: [Model architecture diagram.]
 
 #figure(
   image("images/examples-per-emotion-count.png", width: 60%),
-  caption: [ Distribution emotion categories.]
+  caption: [Distribution emotion categories.]
 )<examples-per-emotion-count>
 
-#figure(image("images/confution-matrix.png"), caption: [Confusion matrix])<conf_mat> // TODO write caption
+#figure(image("images/confution-matrix.png"), caption: [Confusion matrix])<conf_mat>
 
 
 == Modeling and Tokenization
-The Hugging Face Transformers library was used to implement DistilBERT. It is well suited for emotion classification tasks due to its ability to preserve much of BERT's performance while being more efficient. Before feeding the text into the model, we used Hugging Face’s tokenizer to convert sentences into token IDs. The tokenizer handles out-of-vocabulary words by breaking them into word units, ensuring even rare or misspelled terms are processed effectively.
 
 Our models consist on fine-tuning DistilBERT to a multi-label regression task. Specifically, the text is tokenized (using DistilBert's tokenizer) and then the tokens and attention mask are fed into DistilBert's; the output of that model is fed into 2 dense layers, separated by a dropout layer, and concludes with a sigmoid activation layer over the output logits, to draw predictions per emotion#footnote[We find important to note that this is preferable over a softmax activation layer because the texts can have multiple emotions.]. To train these models, the DistilBert layers are frozen, to not only reduce computation times but also to leverage the power of the pre trained transformer. An overview of the model is shown on @diagram. 
 

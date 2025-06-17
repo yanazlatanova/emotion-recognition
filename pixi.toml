@@ -35,6 +35,7 @@ scikit-learn = ">=1.6.1,<2"
 nbmerge = {features = ["nbmerge"], no-default-feature = true}
 gpu = {features = ["gpu"]}
 format = {features = ["format"], no-default-feature = true}
+report = {features = ["report"], no-default-feature = true}
 
 [feature.nbmerge.dependencies]
 nbdime = ">=4.0.2,<5"
@@ -61,3 +62,9 @@ format = "ruff format --config ruff.toml"
 [pypi-dependencies]
 hf-xet = ">=1.1.2, <2"
 
+[feature.report.dependencies]
+typst = "=0.13.1"
+
+[feature.report.tasks.report]
+cmd = "typst compile main.typ AML.pdf"
+cwd = "report"
