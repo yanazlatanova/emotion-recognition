@@ -24,6 +24,9 @@
   // The paper's content.
   body
 ) = {
+  show figure: set figure(
+    placement: auto
+  )
   // Set document metadata.
   set document(title: title, author: authors.map(author => author.name))
 
@@ -192,7 +195,7 @@
   if keywords != none {
     [
       #heading(numbering: none, )[Keywords]
-      #keywords.join(",")
+      #keywords.join(", ")
     ]
   }
 
